@@ -1,50 +1,113 @@
 <?php
 
 function fn_youtube($content, $lot = [], $that = null, $key = null) {
-    $part = preg_split('#(<a(?:\s[^<>]+?)?>[\s\S]*?</a>|<[^<>]+?>)#', $content, null, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
+    $youtube_pattern = 'https?://(?:www\.)?(?:youtube\.com|youtu\.be)/[^\s<>]+';
+    $ignore = [
+        '<pre(?:\s[^<>]+?)?>[\s\S]*?</pre>',
+        '<code(?:\s[^<>]+?)?>[\s\S]*?</code>',
+        '<script(?:\s[^<>]+?)?>[\s\S]*?</script>',
+        '<style(?:\s[^<>]+?)?>[\s\S]*?</style>',
+        '<textarea(?:\s[^<>]+?)?>[\s\S]*?</textarea>'
+    ];
+    $take = [
+        // An anchor in a paragraph tag, a YouTube URL in a paragraph tag
+        '<p(?:\s[^<>]+?)?>\s*(?:<a(?:\s[^<>]+?)?>[\s\S]*?<\/a>|' . $youtube_pattern . ')\s*<\/p>',
+        // An anchor in its own line, a YouTube URL in its own line
+        '(?<=^|\n)(?:[ \t]*<a(?:\s[^<>]+?)?>[^\n]*?<\/a>[ \t]*|' . $youtube_pattern . ')(?=\n|$)'
+    ];
+    $part = preg_split('#(' . implode('|', $ignore) . '|' . implode('|', $take) . ')#', $content, null, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
     $s = "";
-    $skip = 0;
     foreach ($part as $v) {
-        if ($v && $v[0] === '<' && substr($v, -1) === '>') {
-            if (substr($v, -4) === '</a>' && strpos($v, ' href="') !== false) {
-                $a = HTML::apart($v);
-                $b = isset($a[2]['href']) ? $a[2]['href'] : X;
-                if (
-                    strpos($b, '://www.youtube.com/') !== false ||
-                    strpos($b, '://www.youtu.be/') !== false ||
-                    strpos($b, '://youtube.com/') !== false ||
-                    strpos($b, '://youtu.be/') !== false
-                ) {
-                    $s .= fn_youtube_replace($b);
+        // `<p> ... </p>`
+        if (substr($v, -4) === '</p>') {
+            // `<p><a href="{$link}">text</a></p>`
+            if (
+                strpos($v, '</a>') !== false &&
+                strpos($v, ' href="') !== false &&
+                preg_match('#<a(?:\s[^<>]+?)?>[\s\S]*?<\/a>#', $v, $m)
+            ) {
+                $test = HTML::apart($m[0]);
+                if ($test && isset($test[2]['href']) && preg_match('#^' . $youtube_pattern . '$#', $test[2]['href'])) {
+                    $s .= fn_youtube_replace($test[2]['href'], 'p') ?: $v;
                 } else {
                     $s .= $v;
                 }
+            // `<p>{$link}</p>`
+            } else if (
+                strpos($v, '://') !== false &&
+                preg_match('#' . $youtube_pattern . '#', $v, $m)
+            ) {
+                $s .= fn_youtube_replace($m[0], 'p') ?: $v;
             } else {
                 $s .= $v;
             }
-            if (preg_match('#^<(?:code|kbd|pre|script|style|textarea)\b#', $v)) {
-                $skip = 1;
-            } else if ($v[1] === '/') {
-                $skip = 0;
+        // `<a href="{$link}">text</a>`
+        } else if (
+            substr($v, -4) === '</a>' &&
+            strpos($v, ' href="') !== false
+        ) {
+            $test = HTML::apart($v);
+            if ($test && isset($test[2]['href']) && preg_match('#^' . $youtube_pattern . '$#', $test[2]['href'])) {
+                $s .= fn_youtube_replace($test[2]['href'], 'p') ?: $v;
+            } else {
+                $s .= $v;
             }
+        // `{$link}`
+        } else if (
+		    $v &&
+			$v[0] !== '<' &&
+			substr($v, -1) !== '>' &&
+            strpos($v, '://') !== false &&
+            strpos($v, "\n") === false &&
+            preg_match('#' . $youtube_pattern . '#', $v, $m)
+        ) {
+            $s .= fn_youtube_replace($m[0]) ?: $v;
         } else {
-            $s .= $skip ? $v : fn_youtube_replace($v);
+            $s .= $v;
         }
     }
     return $s;
 }
 
-// TODO: Keep setting(s) from YouTube URL
-function fn_youtube_replace($s) {
-    if (
-        strpos($s, '://www.youtube.com/') === false &&
-        strpos($s, '://www.youtu.be/') === false &&
-        strpos($s, '://youtube.com/') === false &&
-        strpos($s, '://youtu.be/') === false
-    ) {
-        return $s;
+function fn_youtube_replace($href, $t = 'span') {
+    $u = parse_url($href);
+    parse_str(isset($u['query']) ? $u['query'] : "", $q);
+    $q = array_replace_recursive(Plugin::state(__DIR__, 'q') ?: [], $q);
+    $id = isset($q['v']) ? $q['v'] : null; // `https://www.youtube.com/watch?v={$id}`
+    if (!empty($u['path'])) {
+        if (strpos($href, '/v/') !== false) {
+            $id = explode('/', trim($u['path'], '/'))[1]; // `https://www.youtube.com/v/{$id}`
+        } else if (strpos($href, '/embed/') !== false) {
+            $id = explode('/', trim($u['path'], '/'))[1]; // `https://www.youtube.com/embed/{$id}`
+        } else if (strpos($href, '/user/') !== false) {
+            // TODO
+        } else if (strpos($href, '/channel/') !== false) {
+            // TODO
+        } else if (strpos($href, '.be/') !== false) {
+            $id = explode('/', trim($u['path'], '/'))[0]; // `https://youtu.be/{$id}`
+        } else {
+            unset($q['v']);
+        }
+    } else {
+        unset($q['v']);
     }
-    return preg_replace('#\bhttps?://(?:www\.)?youtu(?:be\.com/watch\?v=|\.be/)([\w-]+)(\S*?)#i', '<span class="youtube" style="display:block;margin-right:0;margin-left:0;padding:25px 0 56.25%;position:relative;height:0;"><iframe style="display:block;margin:0;padding:0;border:0;position:absolute;top:0;left:0;width:100%;height:100%;" src="//www.youtube.com/embed/$1" allowfullscreen></iframe></span>', $s);
+    if (isset($q['height'])) {
+        if (is_numeric($q['height']) && strpos($q['height'], '%') === false) {
+            $y = 'padding:0;height:' . $q['height'] . 'px';
+        } else {
+            $y = 'padding:25px 0 ' . $q['height'] . ';height:0';
+        }
+        if (isset($q['width'])) {
+            $y .= ';width:' . (is_numeric($q['width']) ? $q['width'] . 'px' : $q['width']);
+            unset($q['width']);
+        }
+        unset($q['height']);
+    } else {
+        $y = 'padding:25px 0 56.25%;height:0';
+    }
+    $q = http_build_query($q);
+    $q = $q ? '?' . $q : "";
+    return $id ? '<' . $t . ' class="youtube" style="display:block;margin-right:0;margin-left:0;' . $y . ';position:relative;"><iframe style="display:block;margin:0;padding:0;border:0;position:absolute;top:0;left:0;width:100%;height:100%;" src="//www.youtube.com/embed/' . $id . $q . '" allowfullscreen></iframe></' . $t . '>' : "";
 }
 
 Hook::set([

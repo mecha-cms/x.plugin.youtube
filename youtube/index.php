@@ -11,9 +11,9 @@ function fn_youtube($content, $lot = [], $that = null, $key = null) {
     ];
     $take = [
         // An anchor in a paragraph tag, a YouTube URL in a paragraph tag
-        '<p(?:\s[^<>]+?)?>\s*(?:<a(?:\s[^<>]+?)?>[\s\S]*?<\/a>|' . $youtube_pattern . ')\s*<\/p>',
+        '<p(?:\s[^<>]+?)?>\s*(?:<a(?:\s[^<>]+?)?>[\s\S]*?</a>|' . $youtube_pattern . ')\s*</p>',
         // An anchor in its own line, a YouTube URL in its own line
-        '(?<=^|\n)(?:[ \t]*<a(?:\s[^<>]+?)?>[^\n]*?<\/a>[ \t]*|' . $youtube_pattern . ')(?=\n|$)'
+        '(?<=^|\n)(?:[ \t]*<a(?:\s[^<>]+?)?>[^\n]*?</a>[ \t]*|' . $youtube_pattern . ')(?=\n|$)'
     ];
     $part = preg_split('#(' . implode('|', $ignore) . '|' . implode('|', $take) . ')#', $content, null, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
     $s = "";
@@ -24,7 +24,7 @@ function fn_youtube($content, $lot = [], $that = null, $key = null) {
             if (
                 strpos($v, '</a>') !== false &&
                 strpos($v, ' href="') !== false &&
-                preg_match('#<a(?:\s[^<>]+?)?>[\s\S]*?<\/a>#', $v, $m)
+                preg_match('#<a(?:\s[^<>]+?)?>[\s\S]*?</a>#', $v, $m)
             ) {
                 $test = HTML::apart($m[0]);
                 if ($test && isset($test[2]['href']) && preg_match('#^' . $youtube_pattern . '$#', $test[2]['href'])) {
@@ -54,9 +54,9 @@ function fn_youtube($content, $lot = [], $that = null, $key = null) {
             }
         // `{$link}`
         } else if (
-		    $v &&
-			$v[0] !== '<' &&
-			substr($v, -1) !== '>' &&
+            $v &&
+            $v[0] !== '<' &&
+            substr($v, -1) !== '>' &&
             strpos($v, '://') !== false &&
             strpos($v, "\n") === false &&
             preg_match('#' . $youtube_pattern . '#', $v, $m)
@@ -95,7 +95,7 @@ function fn_youtube_replace($href, $t = 'span') {
         if (is_numeric($q['height']) && strpos($q['height'], '%') === false) {
             $y = 'padding:0;height:' . $q['height'] . 'px';
         } else {
-            $y = 'padding:25px 0 ' . $q['height'] . ';height:0';
+            $y = 'padding:0 0 ' . $q['height'] . ';height:0';
         }
         if (isset($q['width'])) {
             $y .= ';width:' . (is_numeric($q['width']) ? $q['width'] . 'px' : $q['width']);
@@ -103,7 +103,7 @@ function fn_youtube_replace($href, $t = 'span') {
         }
         unset($q['height']);
     } else {
-        $y = 'padding:25px 0 56.25%;height:0';
+        $y = 'padding:0 0 56.25%;height:0';
     }
     $q = http_build_query($q);
     $q = $q ? '?' . $q : "";

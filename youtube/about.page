@@ -3,7 +3,7 @@ title: YouTube
 description: Convert _YouTube_ link and URL into video.
 author: Taufik Nurrohman
 type: Markdown
-version: 1.0.2
+version: 1.0.3
 ...
 
 This plugin will automatically convert these supported _YouTube_ link and URL in the page and comment content to _YouTube_ video player:

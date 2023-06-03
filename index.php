@@ -1,8 +1,8 @@
 <?php
 
 namespace x\youtube {
-    function content(?string $content, array $lot = []) {
-        if (!$content || false === \strpos($content, '</p>')) {
+    function content($content) {
+        if (!$content || false === \stripos($content, '</p>')) {
             return $content;
         }
         // Skip parsing process if we are in these HTML element(s)
@@ -25,9 +25,9 @@ namespace x\youtube {
         $content = "";
         foreach ($parts as $part) {
             if ($part && '<' === $part[0] && '>' === \substr($part, -1)) {
-                if ('</p>' === \substr($part, -4)) {
+                if ('</p>' === \strtolower(\substr($part, -4))) {
                     $content .= \preg_replace_callback('/<p(\s(?:"[^"]*"|\'[^\']\'|[^\/>])*)?>(\s*)(<a(?:\s(?:"[^"]*"|\'[^\']\'|[^\/>])*)?>[\s\S]*?<\/a>|https?:\/\/(?:www\.)?(?:youtu\.be|youtube\.com)\/\S+)(\s*)<\/p>/i', static function ($m) {
-                        if ('</a>' === \substr(\strtolower($v = $m[3]), -4) && false !== \strpos($v, 'href=')) {
+                        if ('</a>' === \strtolower(\substr($v = $m[3], -4)) && false !== \stripos($v, 'href=')) {
                             $a = new \HTML($v);
                             if (!$href = $a['href']) {
                                 return $m[0];
@@ -83,13 +83,13 @@ namespace x\youtube {
                     'allowfullscreen' => true,
                     'frameborder' => '0',
                     'src' => 'https://www.youtube.com/embed/' . $id . $q,
-                    'style' => 'border: 0; display: block; height: 100%; left: 0; margin: 0; padding: 0; position: absolute; top: 0; width: 100%;',
+                    'style' => 'border: 0; display: block; height: 100%; left: 0; margin: 0; overflow: hidden; padding: 0; position: absolute; top: 0; width: 100%;',
                     'title' => $m['title'] ?? \i('YouTube Video Player')
                 ]],
                 '>' => $m[4] ?? ""
             ],
             2 => \array_replace([
-                'style' => 'display: block; height: 0; margin-left: 0; margin-right: 0; padding: 0 0 56.25%; position: relative;'
+                'style' => 'display: block; height: 0; margin-left: 0; margin-right: 0; overflow: hidden; padding: 0 0 56.25%; position: relative;'
             ], (array) ($p[2] ?? []))
         ]]), true);
     }

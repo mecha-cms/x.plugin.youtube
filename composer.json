@@ -1,0 +1,5 @@
+{
+  "description": "Converts YouTube links into embeds.",
+  "license": "GPL-3.0-or-later",
+  "name": "mecha-cms/x.youtube"
+}

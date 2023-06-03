@@ -1,35 +1,35 @@
 ---
 title: YouTube
-description: Convert _YouTube_ link and URL into video.
+description: Converts YouTube links into embeds.
+icon: 'M10,15L15.19,12L10,9V15M21.56,7.17C21.69,7.64 21.78,8.27 21.84,9.07C21.91,9.87 21.94,10.56 21.94,11.16L22,12C22,14.19 21.84,15.8 21.56,16.83C21.31,17.73 20.73,18.31 19.83,18.56C19.36,18.69 18.5,18.78 17.18,18.84C15.88,18.91 14.69,18.94 13.59,18.94L12,19C7.81,19 5.2,18.84 4.17,18.56C3.27,18.31 2.69,17.73 2.44,16.83C2.31,16.36 2.22,15.73 2.16,14.93C2.09,14.13 2.06,13.44 2.06,12.84L2,12C2,9.81 2.16,8.2 2.44,7.17C2.69,6.27 3.27,5.69 4.17,5.44C4.64,5.31 5.5,5.22 6.82,5.16C8.12,5.09 9.31,5.06 10.41,5.06L12,5C16.19,5 18.8,5.16 19.83,5.44C20.73,5.69 21.31,6.27 21.56,7.17Z'
+color: '#ff0000'
 author: Taufik Nurrohman
 type: Markdown
-version: 1.0.3
+version: 2.0.0
 ...
 
-This plugin will automatically convert these supported _YouTube_ link and URL in the page and comment content to _YouTube_ video player:
+This extension converts these supported [YouTube](https://www.youtube.com) links in the page content into YouTube video
+players:
 
- - `https://www.youtube.com/watch?v={$id}`
- - `https://www.youtube.com/v/{$id}`
- - `https://youtu.be/{$id}`
- - `https://www.youtube.com/embed/{$id}`
+ - `https://www.youtube.com/watch?v=:id`
+ - `https://www.youtube.com/v/:id`
+ - `https://youtu.be/:id`
+ - `https://www.youtube.com/embed/:id`
 
-The _YouTube_ link and URL must be written on its own line by itself, with or without the `www`, with `http://` or `https://`.
+Links must be written on one line as the paragraph content. The `www.` part is always optional:
 
-All of [the available _YouTube_ player parameters](https://developers.google.com/youtube/player_parameters) can be used normally and will be applied automatically to the generated video frames.
-
-### Additional Parameters
-
-Name | Description
----- | -----------
-`width` | Set custom video width.
-`height` | Set custom video height.
-
-**Example:**
-
-~~~ .txt
-https://www.youtube.com/watch?v={$id}&width=600&height=250
-https://www.youtube.com/watch?v={$id}&width=600px&height=250px
-https://www.youtube.com/watch?v={$id}&height=25%
+~~~ .html
+<p>https://youtu.be/dQw4w9WgXcQ</p>
 ~~~
 
-<!-- block:donate -->
+Writing links as anchor tags is recommended, so that when you decide to remove this feature in the future, those links
+will still be functional as normal links that will direct you to the correct YouTube video page:
+
+~~~ .html
+<p>
+  <a href="https://youtu.be/dQw4w9WgXcQ" target="_blank">Video Title</a>
+</p>
+~~~
+
+All of [the available YouTube player parameters](https://developers.google.com/youtube/player_parameters) can be used
+normally and will be applied automatically to the generated video frames.

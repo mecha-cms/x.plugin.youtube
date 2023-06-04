@@ -1,6 +1,32 @@
 <?php
 
 namespace x\youtube {
+    function from(string $id, string $q, array $m = []) {
+        $p = new \HTML('<p' . ($m[1] ?? "") . '>');
+        return new \HTML(\Hook::fire('y.youtube', [[
+            'id' => $id,
+            'query' => $q ? \From::query($q) : [],
+            0 => $p[0],
+            1 => [
+                '<' => $m[2] ?? "",
+                'embed' => ['iframe', "", [
+                    'allow' => 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+                    'allowfullscreen' => true,
+                    'frameborder' => '0',
+                    'src' => 'https://www.youtube.com/embed/' . $id . $q,
+                    'style' => 'border: 0; display: block; height: 100%; left: 0; margin: 0; overflow: hidden; padding: 0; position: absolute; top: 0; width: 100%;',
+                    'title' => $m['title'] ?? \i('YouTube Video Player')
+                ]],
+                '>' => $m[4] ?? ""
+            ],
+            2 => \array_replace([
+                'style' => 'display: block; height: 0; margin-left: 0; margin-right: 0; overflow: hidden; padding: 0 0 56.25%; position: relative;'
+            ], (array) ($p[2] ?? []))
+        ]]), true);
+    }
+}
+
+namespace x\youtube\page {
     function content($content) {
         if (!$content || false === \stripos($content, '</p>')) {
             return $content;
@@ -70,30 +96,28 @@ namespace x\youtube {
         }
         return "" !== $content ? $content : null;
     }
-    function from(string $id, string $q, array $m = []) {
-        $p = new \HTML('<p' . ($m[1] ?? "") . '>');
-        return new \HTML(\Hook::fire('y.youtube', [[
-            'id' => $id,
-            'query' => $q ? \From::query($q) : [],
-            0 => $p[0],
-            1 => [
-                '<' => $m[2] ?? "",
-                'embed' => ['iframe', "", [
-                    'allow' => 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
-                    'allowfullscreen' => true,
-                    'frameborder' => '0',
-                    'src' => 'https://www.youtube.com/embed/' . $id . $q,
-                    'style' => 'border: 0; display: block; height: 100%; left: 0; margin: 0; overflow: hidden; padding: 0; position: absolute; top: 0; width: 100%;',
-                    'title' => $m['title'] ?? \i('YouTube Video Player')
-                ]],
-                '>' => $m[4] ?? ""
-            ],
-            2 => \array_replace([
-                'style' => 'display: block; height: 0; margin-left: 0; margin-right: 0; overflow: hidden; padding: 0 0 56.25%; position: relative;'
-            ], (array) ($p[2] ?? []))
-        ]]), true);
-    }
     \Hook::set('page.content', __NAMESPACE__ . "\\content", 2.1);
+    if (isset($state->x->image)) {
+        function image($image) {
+            // Skip if `image` data has been set!
+            if ($image) {
+                return $image;
+            }
+            // Get YouTube link from `content` data
+            if ($content = $this->content) {
+                if (false !== \strpos($content, '<iframe ') && \preg_match('/<iframe(\s[^>]+)>/', $content, $m)) {
+                    if (false !== \strpos($m[1], ' src=')) {
+                        $embed = \htmlspecialchars_decode(\trim(\strstr(\substr(\strstr($m[1], ' src='), 5) . ' ', ' ', true), '\'"'));
+                        // TODO
+                    }
+                }
+            }
+            return null;
+        }
+        function images($images) {}
+        \Hook::set('page.image', __NAMESPACE__ . "\\image", 2.2);
+        \Hook::set('page.images', __NAMESPACE__ . "\\images", 2.2);
+    }
 }
 
 namespace {

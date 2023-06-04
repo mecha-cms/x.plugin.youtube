@@ -1,11 +1,13 @@
 <?php
 
 namespace x\youtube {
-    function from(string $id, string $q, array $m = []) {
+    function from(string $id, string $end, array $m = []) {
         $p = new \HTML('<p' . ($m[1] ?? "") . '>');
+        $parts = \array_replace(["", ""], \explode('#', $end, 2));
         return new \HTML(\Hook::fire('y.youtube', [[
+            'hash' => "" !== $parts[1] ? $parts[1] : null,
             'id' => $id,
-            'query' => $q ? \From::query($q) : [],
+            'query' => "" !== $parts[0] ? \From::query($parts[0]) : [],
             0 => $p[0],
             1 => [
                 '<' => $m[2] ?? "",
@@ -13,7 +15,7 @@ namespace x\youtube {
                     'allow' => 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
                     'allowfullscreen' => true,
                     'frameborder' => '0',
-                    'src' => 'https://www.youtube.com/embed/' . $id . $q,
+                    'src' => 'https://www.youtube.com/embed/' . $id . $end,
                     'style' => 'border: 0; display: block; height: 100%; left: 0; margin: 0; overflow: hidden; padding: 0; position: absolute; top: 0; width: 100%;',
                     'title' => $m['title'] ?? \i('YouTube Video Player')
                 ]],
@@ -24,10 +26,7 @@ namespace x\youtube {
             ], (array) ($p[2] ?? []))
         ]]), true);
     }
-}
-
-namespace x\youtube\page {
-    function content($content) {
+    function page__content($content) {
         if (!$content || false === \stripos($content, '</p>')) {
             return $content;
         }
@@ -96,9 +95,9 @@ namespace x\youtube\page {
         }
         return "" !== $content ? $content : null;
     }
-    \Hook::set('page.content', __NAMESPACE__ . "\\content", 2.1);
+    \Hook::set('page.content', __NAMESPACE__ . "\\page__content", 2.1);
     if (isset($state->x->image)) {
-        function image($image) {
+        function page__image($image) {
             // Skip if `image` data has been set!
             if ($image) {
                 return $image;
@@ -114,13 +113,10 @@ namespace x\youtube\page {
             }
             return null;
         }
-        function images($images) {}
-        \Hook::set('page.image', __NAMESPACE__ . "\\image", 2.2);
-        \Hook::set('page.images', __NAMESPACE__ . "\\images", 2.2);
+        function page__images($images) {}
+        \Hook::set('page.image', __NAMESPACE__ . "\\page__image", 2.2);
+        \Hook::set('page.images', __NAMESPACE__ . "\\page__images", 2.2);
     }
-}
-
-namespace {
     if (\defined("\\TEST") && 'x.youtube' === \TEST && \is_file($test = __DIR__ . \D . 'test.php')) {
         require $test;
     }

@@ -80,7 +80,7 @@ function page__content($content) {
                             return $m[0];
                         }
                         // `https://youtu.be/:id`
-                        if ((false !== \strpos($v, '://youtu.be/') || false !== \strpos($v, '.youtu.be/')) && \preg_match('/[\/.]youtu\.be\/([^\/?&#]+)([?&#].*)?$/', $v, $mm)) {
+                        if ((false !== \strpos($v, '/youtu.be/') || false !== \strpos($v, '.youtu.be/')) && \preg_match('/[\/.]youtu\.be\/([^\/?&#]+)([?&#].*)?$/', $v, $mm)) {
                             return \x\youtube\from($mm[1], $mm[2] ?? "", $m);
                         }
                     }
@@ -96,26 +96,48 @@ function page__content($content) {
     return "" !== $content ? $content : null;
 }
 
-\Hook::set('page.content', __NAMESPACE__ . "\\page__content", 2.1);
-
-if (isset($state->x->image)) {
-    function page__image($image) {
-        // Skip if `image` data has been set!
-        if ($image) {
-            return $image;
-        }
-        // Get YouTube link from `content` data
-        if ($content = $this->content) {
-            if (false !== \strpos($content, '<iframe ') && \preg_match('/<iframe(\s[^>]+)>/', $content, $m)) {
-                if (false !== \strpos($m[1], ' src=')) {
-                    $embed = \htmlspecialchars_decode(\trim(\strstr(\substr(\strstr($m[1], ' src='), 5) . ' ', ' ', true), '\'"'));
-                    // TODO
+function page__image($image) {
+    // Skip if `image` data has been set!
+    if ($image) {
+        return $image;
+    }
+    // Get YouTube link from `content` data
+    if ($content = $this->content) {
+        if (false !== \strpos($content, '<iframe ') && \preg_match('/<iframe(\s[^>]+)>/', $content, $m)) {
+            if (false !== \strpos($m[1], ' src=')) {
+                $link = \htmlspecialchars_decode(\trim(\strstr(\substr(\strstr($m[1], ' src='), 5) . ' ', ' ', true), '\'"'));
+                // Get YouTube video image from link
+                if (false !== \strpos($link, 'youtube.com/embed/') && \preg_match('/\/embed\/([^\/?&#]+)$/', $link, $mm)) {
+                    return 'https://img.youtube.com/vi/' . $mm[1] . '/0.jpg';
                 }
             }
         }
-        return null;
     }
-    function page__images($images) {}
+    return null;
+}
+
+function page__images($images) {
+    $images = (array) ($images ?? []);
+    // Get YouTube link(s) from `content` data
+    if ($content = $this->content) {
+        if (false !== \strpos($content, '<iframe ') && \preg_match_all('/<iframe(\s[^>]+)>/', $content, $m)) {
+            foreach ($m[1] as $v) {
+                if (false !== \strpos($v, ' src=')) {
+                    $link = \htmlspecialchars_decode(\trim(\strstr(\substr(\strstr($v, ' src='), 5) . ' ', ' ', true), '\'"'));
+                    // Get YouTube video image from link
+                    if (false !== \strpos($link, 'youtube.com/embed/') && \preg_match('/\/embed\/([^\/?&#]+)$/', $link, $mm)) {
+                        // Merge with the current `images` data
+                        $images[] = 'https://img.youtube.com/vi/' . $mm[1] . '/0.jpg';
+                    }
+                }
+            }
+        }
+    }
+    return \array_unique($images);
+}
+
+\Hook::set('page.content', __NAMESPACE__ . "\\page__content", 2.1);
+if (isset($state->x->image)) {
     \Hook::set('page.image', __NAMESPACE__ . "\\page__image", 2.2);
     \Hook::set('page.images', __NAMESPACE__ . "\\page__images", 2.2);
 }

@@ -63,11 +63,11 @@ function page__content($content) {
                     if (0 === \strpos($v, 'http://') || 0 === \strpos($v, 'https://')) {
                         // `https://www.youtube.com/embed/:id`
                         if (false !== \strpos($v, '/embed/') && \preg_match('/\/embed\/([^\/?&#]+)([?&#].*)?$/', $v, $mm)) {
-                            return \x\youtube\from($mm[1], $mm[2] ?? "", $m);
+                            return (string) \x\youtube\from($mm[1], $mm[2] ?? "", $m);
                         }
                         // `https://www.youtube.com/v/:id`
                         if (false !== \strpos($v, '/v/') && \preg_match('/\/v\/([^\/?&#]+)([?&#].*)?$/', $v, $mm)) {
-                            return \x\youtube\from($mm[1], $mm[2] ?? "", $m);
+                            return (string) \x\youtube\from($mm[1], $mm[2] ?? "", $m);
                         }
                         // `https://www.youtube.com/watch?v=:id`
                         if (false !== \strpos($v, '/watch') && \preg_match('/\/watch\?([^#]+)([#].*)?$/', $v, $mm)) {
@@ -75,17 +75,17 @@ function page__content($content) {
                             if (isset($q['v'])) {
                                 $id = $q['v'];
                                 unset($q['v']);
-                                return \x\youtube\from($id, $q ? '?' . \http_build_query($q) : "", $m);
+                                return (string) \x\youtube\from($id, $q ? '?' . \http_build_query($q) : "", $m);
                             }
                             return $m[0];
                         }
                         // `https://youtu.be/:id`
                         if ((false !== \strpos($v, '/youtu.be/') || false !== \strpos($v, '.youtu.be/')) && \preg_match('/[\/.]youtu\.be\/([^\/?&#]+)([?&#].*)?$/', $v, $mm)) {
-                            return \x\youtube\from($mm[1], $mm[2] ?? "", $m);
+                            return (string) \x\youtube\from($mm[1], $mm[2] ?? "", $m);
                         }
                     }
                     return $m[0];
-                }, $part);
+                }, $part) ?? $part;
                 continue;
             }
             $content .= $part; // Is a HTML tag other than `<p>` or comment, skip!
